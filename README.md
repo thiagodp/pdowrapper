@@ -2,8 +2,6 @@
 
 A useful PDO wrapper.
 
-[![Build Status](https://travis-ci.org/thiagodp/pdowrapper.svg?branch=master)](https://travis-ci.org/thiagodp/pdowrapper)
-
 Current [version](http://semver.org/): `1.0`
 
 Classes:
