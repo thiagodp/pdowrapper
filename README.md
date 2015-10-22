@@ -2,7 +2,7 @@
 
 A useful PDO wrapper.
 
-Current [version](http://semver.org/): `1.0`
+Current [version](http://semver.org/): `1.0` (stable, used in production code)
 
 Classes:
 
