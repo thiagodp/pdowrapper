@@ -1,0 +1,24 @@
+{
+	"name": "phputil/pdowrapper",
+	"type": "library",
+	"description": "A useful PDO wrapper.",
+	"keywords": [ "pdo", "php" ],
+	"homepage": "http://github.com/thiagodp/pdowrapper",
+	"license": "LGPL-3",
+	"authors": [ { "name": "Thiago Delgado Pinto" } ],
+	"support": {
+		"issues": "https://github.com/thiagodp/pdowrapper/issues",
+		"source": "https://github.com/thiagodp/pdowrapper"
+	},
+	"minimum-stability": "dev",
+	"require": {
+		"php": ">=5.2.0"
+	},
+	"require-dev": {
+    },	
+	"suggest": {
+	},
+	"autoload": {
+		"classmap": [ "lib/" ]
+	}
+}
