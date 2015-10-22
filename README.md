@@ -8,8 +8,8 @@ Current [version](http://semver.org/): `1.0`
 
 Classes:
 
-* PDOWrapper
-* PDOBuilder
+* [phputil\PDOWrapper](https://github.com/thiagodp/pdowrapper/blob/master/lib/PDOWrapper.php)
+* [phputil\PDOBuilder](https://github.com/thiagodp/pdowrapper/blob/master/lib/PDOBuilder.php)
 
 ### Installation
 
@@ -19,7 +19,7 @@ composer require phputil/pdowrapper
 
 ### Example 1
 
-Creating PDO with PDOBuilder and counting rows with PDOWrapper.
+Creating `PDO` with `PDOBuilder` and counting rows with `PDOWrapper`.
 
 ```php
 <?php
