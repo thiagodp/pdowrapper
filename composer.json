@@ -10,7 +10,6 @@
 		"issues": "https://github.com/thiagodp/pdowrapper/issues",
 		"source": "https://github.com/thiagodp/pdowrapper"
 	},
-	"minimum-stability": "dev",
 	"require": {
 		"php": ">=5.2.0"
 	},
@@ -19,6 +18,6 @@
 	"suggest": {
 	},
 	"autoload": {
-		"classmap": [ "lib/" ]
+		"psr-4": { "phputil\\": "lib/" }
 	}
 }
