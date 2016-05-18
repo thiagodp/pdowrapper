@@ -5,7 +5,6 @@ namespace phputil;
  *  PDO Builder.
  *  
  *  @author		Thiago Delgado Pinto
- *  @version	1.0
  *  
  *  @see		http://www.php.net/manual/en/pdo.connections.php
  *  @see		http://php.net/manual/en/pdo.setattribute.php
@@ -15,7 +14,7 @@ namespace phputil;
  *  
  *  	<?php
  *  	require_once 'vendor/autoload.php';
- *  	use phputil\PDOBuilder as PDOBuilder;
+ *  	use \phputil\PDOBuilder;
  *  
  *  	$pdo = PDOBuilder::with()
  *  		->dsn( 'mysql:dbname=mydb;host=127.0.0.1;' )

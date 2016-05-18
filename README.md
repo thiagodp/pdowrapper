@@ -2,12 +2,12 @@
 
 A useful PDO wrapper.
 
-Current [version](http://semver.org/): `1.0` (stable, used in production code)
-
 Classes:
 
 * [phputil\PDOWrapper](https://github.com/thiagodp/pdowrapper/blob/master/lib/PDOWrapper.php)
 * [phputil\PDOBuilder](https://github.com/thiagodp/pdowrapper/blob/master/lib/PDOBuilder.php)
+
+This project uses [semantic version](http://semver.org/). See our [releases](https://github.com/thiagodp/pdowrapper/releases).
 
 ### Installation
 
@@ -22,7 +22,8 @@ Creating `PDO` with `PDOBuilder` and counting rows with `PDOWrapper`.
 ```php
 <?php
 require_once 'vendor/autoload.php';
-use phputil\PDOBuilder as PDOBuilder;
+use \phputil\PDOBuilder;
+use \phputil\PDOWrapper;
 
 $pdo = PDOBuilder::with()
 	->dsn( 'mysql:dbname=mydb;host=127.0.0.1;' )
@@ -44,6 +45,7 @@ Delete by id
 
 ```php
 $id = $_GET[ 'id' ];
+// ... <-- validate $id here
 $deleted = $pdoW->deleteWithId( $id, 'customer' );
 echo 'Deleted ', $deleted, ' rows.';
 ```
@@ -55,10 +57,12 @@ Paginated query
 ```php
 $limit = $_GET[ 'limit' ];
 $offset = $_GET[ 'offset' ];
+// ... <-- validate $limit and $offset here
 // makeLimitOffset returns a SQL clause depending of the used database.
 // Currently supports MySQL, PostgreSQL, SQLite, HSQLDB, H2, Firebird, MS SQL Server,
 // or an ANSI SQL 2008 database.
-$pdoStatement = $pdo->execute( 'SELECT name FROM customer', $pdoW->makeLimitOffset( $limit, $offset ) );
+$pdoStatement = $pdo->execute( 'SELECT name FROM customer',
+	$pdoW->makeLimitOffset( $limit, $offset ) );
 echo 'Showing customers from ', $limit, ' to ', $offset, '<br />';
 foreach ( $pdoStatement as $customer ) {
 	echo $customer[ 'name' ], '<br />';
@@ -87,24 +91,24 @@ class UserRepositoryInRelationalDatabase {
 
 	private $pdoW;
 
-	function __construct( phputil\PDOWrapper $pdoW ) {
+	function __construct( PDOWrapper $pdoW ) {
 		$this->pdoW = $pdoW;
 	}
 
 	/**
-	 * Return all the users, supporting pagination.
+	 * Return all the users, considering a limit and an offset.
 	 * @return array of User
 	 */
 	function allUsers( $limit = 0, $offset = 0 ) { // throw
 		// Paginated query
-		$sql = 'SELECT * FROM user' . $this->pdoW->makeLimitOffset( $limit, $offset );
+		$sql = 'SELECT * FROM user' . 
+			$this->pdoW->makeLimitOffset( $limit, $offset );
 		// Call rowToUser to convert each row to a User
 		return $this->pdoW->queryObjects( array( $this, 'rowToUser' ), $sql );
 	}
 	
 	/**
-	 * Converts a row to a User.
-	 *
+	 * Converts a row into a User.
 	 * @return User
 	 */
 	function rowToUser( array $row ) {
@@ -114,6 +118,7 @@ class UserRepositoryInRelationalDatabase {
 
 $limit = $_GET[ 'limit' ];
 $offset = $_GET[ 'offset' ];
+// ... <-- validate $limit and $offset here
 $repository = new UserRepositoryInRelationalDatabase( $pdoW );
 $users = $repository->allUsers( $limit, $offset );
 foreach ( $users as $u ) {

@@ -2,12 +2,11 @@
 namespace phputil;
 
 /**
- * A useful wrapper to PDO.
+ * A wrapper for PDO.
  *
  * @see \PDO
  * 
  * @author	Thiago Delgado Pinto
- * @version	1.0
  */
 class PDOWrapper {
 
