@@ -182,7 +182,7 @@ class PDOWrapper {
 	 * @param ps		the prepared statement.
 	 * @param className	the objects' class name (optional).
 	 */
-	function fetchObjectsFromStatement( PDOStatement $ps, $className = '' ) {
+	function fetchObjectsFromStatement( \PDOStatement $ps, $className = '' ) {
 		$fetchMode = \PDO::FETCH_OBJ;
 		if ( $className != '' ) {
 			$ps->setFetchMode( \PDO::FETCH_CLASS, $className );
@@ -298,7 +298,7 @@ class PDOWrapper {
 	function execute( $command, array $parameters = array() ) { // throws
 		$ps = $this->pdo->prepare( $command );
 		if ( ! $ps || ! $ps->execute( $parameters ) ) {
-			throw new RuntimeException( 'SQL error: ' . $command );
+			throw new \RuntimeException( 'SQL error: ' . $command );
 		}
 		return $ps;
 	}
