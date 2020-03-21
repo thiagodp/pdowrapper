@@ -218,13 +218,19 @@ class PDOWrapper {
 	 * @param recordToObjectCallback	the callback to transform a record into an object.
 	 * @param sql						the query to execute.
 	 * @param parameters				the query parameters.
+	 * @param callbackArguments			the callback arguments.
 	 * @return							an array of objects.
 	 */
-	function queryObjects( $recordToObjectCallback, $sql, array $parameters = array() ) { // throws
+	function queryObjects( $recordToObjectCallback, $sql, array $parameters = array(), $callbackArguments = array() ) { // throws
 		$objects = array();	
 		$ps = $this->execute( $sql, $parameters );
 		foreach ( $ps as $row ) {
-			$obj = call_user_func( $recordToObjectCallback, $row ); // Transform a row into an object
+			if ( !empty( $callbackArguments ) ) {
+				array_unshift($callbackArguments, $row);
+				$obj = call_user_func_array( $recordToObjectCallback, $callbackArguments ); // Transform a row into an object with arguments to callback function
+			} else {
+				$obj = call_user_func( $recordToObjectCallback, $row ); // Transform a row into an object
+			}
 			array_push( $objects, $obj );
 		}
 		return $objects;
