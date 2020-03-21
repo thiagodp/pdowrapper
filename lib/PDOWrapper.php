@@ -225,12 +225,8 @@ class PDOWrapper {
 		$objects = array();	
 		$ps = $this->execute( $sql, $parameters );
 		foreach ( $ps as $row ) {
-			if ( !empty( $callbackArguments ) ) {
-				array_unshift($callbackArguments, $row);
-				$obj = call_user_func_array( $recordToObjectCallback, $callbackArguments ); // Transform a row into an object with arguments to callback function
-			} else {
-				$obj = call_user_func( $recordToObjectCallback, $row ); // Transform a row into an object
-			}
+			array_unshift($callbackArguments, $row);
+			$obj = call_user_func_array( $recordToObjectCallback, $callbackArguments ); // Transform a row into an object with arguments to callback function
 			array_push( $objects, $obj );
 		}
 		return $objects;
