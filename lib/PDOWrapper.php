@@ -5,37 +5,40 @@ namespace phputil;
  * A wrapper for PDO.
  *
  * @see \PDO
- * 
+ *
  * @author	Thiago Delgado Pinto
  */
 class PDOWrapper {
 
 	private $pdo;
-	
+
 	function __construct( \PDO $pdo ) {
 		$this->pdo = $pdo;
 	}
-	
+
+	/**
+	 * @return \PDO
+	 */
 	function getPDO() {
 		return $this->pdo;
 	}
-	
+
 	/**
-	 * Generate an ID for a table based on its MAX value.
+	 * Generates an ID for a table based on its MAX value.
 	 *
-	 * @param tableName		the name of the table.
-	 * @param idFieldName	the name of the id field.
-	 * @return				the next id value or 1 if there are no records.
+	 * @param string $tableName		Table name.
+	 * @param string $idFieldName	Name of the id field (optional).
+	 * @return int
 	 */
 	function generateId( $tableName, $idFieldName = 'id' ) { // throws
 		return 1 + $this->lastId( $tableName, $idFieldName );
 	}
 
 	/**
-	 * Return the last id for the given table or zero if there are no records.
+	 * Returns the last id for the given table or zero if there are no records.
 	 *
-	 * @param string $tableName		the name of the table.
-	 * @param string $idFieldName	the name of the id field.
+	 * @param string $tableName		Table name.
+	 * @param string $idFieldName	Name of the id field (optional).
 	 * @return int
 	 */
 	function lastId( $tableName, $idFieldName = 'id' ) { // throws
@@ -49,28 +52,28 @@ class PDOWrapper {
 		}
 		return 0;
 	}
-	
+
 	/**
-	 * Delete a record by its id.
+	 * Deletes a record by its id and returns the number of affected rows.
 	 *
-	 * @param id			the id value.
-	 * @param tableName		the name of the table.
-	 * @param idFieldName	the name of the id field.
-	 * @return				the number of deleted records.
+	 * @param int $id				Id value.
+	 * @param string $tableName		Table name.
+	 * @param string $idFieldName	Name of the id field (optional).
+	 * @return int
 	 */
 	function deleteWithId( $id, $tableName, $idFieldName = 'id' ) { // throws
 		$cmd = "DELETE FROM $tableName WHERE $idFieldName = ?";
 		return $this->run( $cmd, array( $id ) );
 	}
-	
+
 	/**
-	 * Count the number of records of a table.
+	 * Counts the number of rows of a table.
 	 *
-	 * @param tableName		the name of the table.
-	 * @param idFieldName	the name of the id field.
-	 * @param whereClause	the where clause.
-	 * @param parameters	the parameters for the where clause.
-	 * @return				the number of rows.
+	 * @param string $tableName		Table name.
+	 * @param string $idFieldName	Name of the id field (optional).
+	 * @param string $whereClause	SQL WHERE clause (optional).
+	 * @param array $parameters		Parameters for the where clause (optional).
+	 * @return int
 	 */
 	function countRows(
 		$tableName,
@@ -88,9 +91,15 @@ class PDOWrapper {
 		}
 		return 0;
 	}
-	
+
 	/**
-	 * Make limit and offset clauses for a SQL statement.<br />
+	 * Makes LIMIT and OFFSET clauses for a SQL statement.
+	 *
+	 * @param int $limit	Maximum number of records to retrieve (optional).
+	 * @param int $offset	Number of records to ignore/jump (optional).
+	 * @return string
+	 * @throws \InvalidArgumentException
+	 *
 	 * IMPORTANT: Different databases use different SQL dialects. Please see if your database is
 	 * supported.<br />
 	 *
@@ -107,11 +116,6 @@ class PDOWrapper {
 	 * @see http://troels.arvin.dk/db/rdbms/
 	 * @see http://www.jooq.org/doc/3.0/manual/sql-building/sql-statements/select-statement/limit-clause/
 	 * on the support about limit and offset in different relational databases.
-	 *
-	 * @param limit		the maximum number of records to retrieve.
-	 * @param offset	the number of records to ignore (or "jump").
-	 * @return			a string with the clauses.
-	 * @throws			InvalidArgumentException
 	 */
 	function makeLimitOffset( $limit = 0, $offset = 0 ) { // throw
 		if ( ! is_integer( $limit ) ) throw new \InvalidArgumentException( 'Limit is not a number.' );
@@ -126,17 +130,17 @@ class PDOWrapper {
 				|| $this->isSQLite( $drv )
 				) $sql .= " LIMIT $limit ";
 			// Firebird
-			else if ( $this->isFirebird ) $sql .= " FIRST $limit ";			
+			else if ( $this->isFirebird ) $sql .= " FIRST $limit ";
 			// MS SQL Server 2008+
 			else if ( $this->isSQLServer( $drv ) ) $sql .= " TOP $limit ";
 			// IBM DB2, ANSI-SQL 2008
 			else $sql .= " FETCH FIRST $limit ROWS ONLY ";
 		}
-		// Offset clause		
+		// Offset clause
 		if ( $offset > 0 ) {
 			// MySQL, PostgreSQL, SQLite, HSQLDB, H2
 			if (   $this->isMySQL( $drv )
-				|| $this->isPostgreSQL( $drv ) 
+				|| $this->isPostgreSQL( $drv )
 				|| $this->isSQLite( $drv )
 				) {
 				if ( $limit > 0 ) $sql .= " OFFSET $offset ";
@@ -150,42 +154,43 @@ class PDOWrapper {
 	}
 
 	/**
-	 * Fetch objects from the rows returned by the given query.
+	 * Fetches objects from the rows returned by the given query.
 	 *
-	 * The class of these objects can be defined (or not). In this
-	 * case, the objects' private attributes will receive the column's
-	 * values. Whether the class does not have a private attribute with
-	 * the same name of a column, a public attribute will be created and
-	 * it will receive the respective value.
+	 * @param string $sql 				SQL query.
+	 * @param array $parameters			Query parameters (optional).
+	 * @param string $className			Name of the class used to create objects (optional).
+	 * @param array $constructorArgs	Constructor arguments (optional).
+	 * @return array
 	 *
-	 * How to use it:
+	 * Whether the class is defined, the objects' private attributes will
+	 * receive the columns' values.
+	 * Whether the class does not have a private attribute with the same name
+	 * of a column, a public attribute will be created and it will receive the
+	 * respective value.
+	 *
+	 * Usage:
 	 * <code>
-	 *	$users = $pdoW->fetchObjects( 'select * from user', array(), 'User' );
-	 * </code>	 
-	 *
-	 *
-	 * @param sql			the query.
-	 * @param parameters	the query parameters (optional).
-	 * @param className		the name of the class used to instance
-	 * 						the objects (optional).	 
-	 * @return				an array with the fetched objects.
+	 *	$users = $pdoW->fetchObjects( 'SELECT * FROM user', array(), 'User' );
+	 * </code>
 	 */
-	function fetchObjects( $sql, array $parameters = array(), $className = '' ) {
+	function fetchObjects( $sql, array $parameters = array(), $className = '', $constructorArgs = array() ) {
 		$ps = $this->execute( $sql, $parameters );
-		return $this->fetchObjectsFromStatement( $ps, $className );
+		return $this->fetchObjectsFromStatement( $ps, $className, $constructorArgs );
 	}
-	
+
 	/**
-	 * Fetch objects from a prepared statement.
+	 * Fetches objects from a prepared statement.
 	 *
-	 * @param ps		the prepared statement.
-	 * @param className	the objects' class name (optional).
+	 * @param \PDOStatement $ps			Prepared statement.
+	 * @param string $className			Class name for the objects (optional).
+	 * @param array $constructorArgs	Constructor arguments (optional).
+	 * @return array
 	 */
-	function fetchObjectsFromStatement( \PDOStatement $ps, $className = '' ) {
+	function fetchObjectsFromStatement( \PDOStatement $ps, $className = '', $constructorArgs = array() ) {
 		$fetchMode = \PDO::FETCH_OBJ;
 		if ( $className != '' ) {
-			$ps->setFetchMode( \PDO::FETCH_CLASS, $className );
-			$fetchMode = \PDO::FETCH_CLASS;
+			$fetchMode = \PDO::FETCH_CLASS | \PDO::FETCH_PROPS_LATE;
+			$ps->setFetchMode( $fetchMode, $className, $constructorArgs );
 		}
 		$objects = array();
 		while ( ( $obj = $ps->fetch( $fetchMode ) ) !== false ) {
@@ -194,10 +199,14 @@ class PDOWrapper {
 		return $objects;
 	}
 
-
-	
 	/**
-	 * Make a query and return an array of objects.<br />
+	 * Performs a query and returns an array of objects.
+	 *
+	 * @param callable $recordToObjectCallback	Callback to transform a record into an object.
+	 * @param string $sql						Query to execute.
+	 * @param array $parameters					Query parameters (optional).
+	 * @param array $callbackArguments			Callback arguments (optional).
+	 * @return array
 	 *
 	 * How to use it:< br />
 	 * <code>
@@ -215,14 +224,14 @@ class PDOWrapper {
 	 * }
 	 * </code>
 	 *
-	 * @param recordToObjectCallback	the callback to transform a record into an object.
-	 * @param sql						the query to execute.
-	 * @param parameters				the query parameters.
-	 * @param callbackArguments			the callback arguments.
-	 * @return							an array of objects.
 	 */
-	function queryObjects( $recordToObjectCallback, $sql, array $parameters = array(), $callbackArguments = array() ) { // throws
-		$objects = array();	
+	function queryObjects(
+			$recordToObjectCallback,
+			$sql,
+			array $parameters = array(),
+			array $callbackArguments = array()
+		) { // throws
+		$objects = array();
 		$ps = $this->execute( $sql, $parameters );
 		foreach ( $ps as $row ) {
 			array_unshift($callbackArguments, $row);
@@ -231,15 +240,15 @@ class PDOWrapper {
 		}
 		return $objects;
 	}
-	
+
 	/**
-	 * Return an object with the given id or null if not found.
+	 * Returns an object with the given id or null if not found.
 	 *
-	 * @param recordToObjectCallback	the callback to transform a record into an object.
-	 * @param id						the id value.
-	 * @param tableName					the table name.
-	 * @param idFieldName				the name of the id field.
-	 * @return							the object with the given id or null if not found.
+	 * @param callable $recordToObjectCallback	Callback to transform a record into an object.
+	 * @param int $id							Id value.
+	 * @param string $tableName					Table name.
+	 * @param string $idFieldName				Name of the id field (optional).
+	 * @return object | null
 	 */
 	function objectWithId( $recordToObjectCallback, $id, $tableName, $idFieldName = 'id' ) {
 		$cmd = "SELECT * FROM $tableName WHERE $idFieldName = ?";
@@ -250,27 +259,27 @@ class PDOWrapper {
 		}
 		return null;
 	}
-	
+
 	/**
-	 * Return all the records as objects.
+	 * Returns all the records as objects.
 	 *
-	 * @param recordToObjectCallback	the callback to transform a record into an object.
-	 * @param tableName					the table name.
-	 * @param limit						the maximum number of records to retrieve.
-	 * @param offset					the number of records to ignore (or "jump").
-	 * @return							an array of objects.
+	 * @param callable $recordToObjectCallback	Callback to transform a record into an object.
+	 * @param string $tableName					Table name.
+	 * @param int $limit						Maximum number of records to retrieve (optional).
+	 * @param int $offset						Number of records to ignore/jump (optional).
+	 * @return array
 	 */
 	function allObjects( $recordToObjectCallback, $tableName, $limit = 0, $offset = 0 ) {
 		$cmd = "SELECT * FROM $tableName" . $this->makeLimitOffset( $limit, $offset );
 		return $this->queryObjects( $recordToObjectCallback, $cmd );
 	}
-	
+
 	/**
-	 * Run a command with the supplied parameters and return the number of affected rows.
-	 * 
-	 * @param command		the command to run.
-	 * @param parameters	the array of parameters for the command.
-	 * @return				the number of affected rows.
+	 * Runs a command with the supplied parameters and return the number of affected rows.
+	 *
+	 * @param string $command	Command to run.
+	 * @param array $parameters	Parameters for the command (optional).
+	 * @return int
 	 */
 	function run( $command, array $parameters = array() ) { // throws
 		$ps = $this->execute( $command, $parameters );
@@ -278,11 +287,11 @@ class PDOWrapper {
 	}
 
 	/**
-	 * Run a query with the supplied parameters and return an array of rows.
-	 * 
+	 * Runs a query with the supplied parameters and return an array of rows.
+	 *
 	 * @param query			the query to run.
 	 * @param parameters	the array of parameters for the query.
-	 * @return				an array of rows.
+	 * @return array		an array of rows.
 	 */
 	function query( $query, array $parameters = array() ) { // throws
 		$ps = $this->execute( $query, $parameters );
@@ -290,12 +299,12 @@ class PDOWrapper {
 	}
 
 	/**
-	 * Execute a command with the supplied parameters and return a PDOStatement object.
-	 * 
-	 * @param command		the command to execute.
-	 * @param parameters	the array of parameters for the command.
-	 * @return				a {@code PDOStatement} object.
-	 */	
+	 * Executes a command with the supplied parameters and return a PDOStatement object.
+	 *
+	 * @param command			the command to execute.
+	 * @param parameters		the array of parameters for the command.
+	 * @return \PDOStatement	a {@code PDOStatement} object.
+	 */
 	function execute( $command, array $parameters = array() ) { // throws
 		$ps = $this->pdo->prepare( $command );
 		if ( ! $ps || ! $ps->execute( $parameters ) ) {
@@ -303,21 +312,21 @@ class PDOWrapper {
 		}
 		return $ps;
 	}
-	
+
 	// UTIL
 
 	/**
-	 * Return the last inserted id.
+	 * Returns the last inserted id.
 	 *
-	 * @param name	the name of the sequence, if needed. OPTIONAL.
-	 * @return 		a string.
+	 * @param string $name	Name of the sequence (optional).
+	 * @return string
 	 */
 	function lastInsertId( $name = null ) {
 		return $this->pdo->lastInsertId( $name );
 	}
-	
+
 	// TRANSACTION
-	
+
 	function inTransaction() {
 		return $this->pdo->inTransaction();
 	}
@@ -327,62 +336,62 @@ class PDOWrapper {
 			$this->pdo->beginTransaction();
 		}
 	}
-	
+
 	function commit() {
 		if ( $this->inTransaction() ) {
 			$this->pdo->commit();
-		}		
+		}
 	}
-	
+
 	function rollBack() {
 		if ( $this->inTransaction() ) {
 			$this->pdo->rollBack();
 		}
 	}
-	
+
 	// ATTRIBUTES
-	
+
 	function driverName() {
 		return $this->pdo->getAttribute( constant( 'PDO::ATTR_DRIVER_NAME' ) );
 	}
-	
+
 	private function isDriverName( $expected, $value = '' ) {
 		$driverName = empty( $value ) ? $this->driverName() : $value;
 		return $expected === $driverName;
-		
+
 	}
-	
+
 	function isMySQL( $driverName = '' ) {
 		return $this->isDriverName( 'mysql', $driverName );
 	}
-	
+
 	function isFirebird( $driverName = '' ) {
 		return $this->isDriverName( 'firebird', $driverName );
-	}	
-		
+	}
+
 	function isPostgreSQL( $driverName = '' ) {
 		return $this->isDriverName( 'pgsql', $driverName );
 	}
-	
+
 	function isSQLite( $driverName = '' ) {
 		return $this->isDriverName( 'sqlite', $driverName )
 			|| $this->isDriverName( 'sqlite2', $driverName );
 	}
-	
+
 	function isSQLServer( $driverName = '' ) {
 		return $this->isDriverName( 'sqlsrv', $driverName );
 	}
-	
+
 	function isOracle( $driverName = '' ) {
 		return $this->isDriverName( 'oci', $driverName );
 	}
-	
+
 	function isDB2( $driverName = '' ) {
 		return $this->isDriverName( 'ibm', $driverName );
-	}	
-	
+	}
+
 	function isODBC( $driverName = '' ) {
 		return $this->isDriverName( 'odbc', $driverName );
-	}	
+	}
 }
 ?>
