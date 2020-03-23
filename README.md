@@ -9,13 +9,13 @@ Classes:
 
 This project uses [semantic version](http://semver.org/). See our [releases](https://github.com/thiagodp/pdowrapper/releases).
 
-### Installation
+## Installation
 
 ```command
 composer require phputil/pdowrapper
 ```
 
-### Example 1
+## Example 1
 
 Creating `PDO` with `PDOBuilder` and counting rows with `PDOWrapper`.
 
@@ -33,7 +33,7 @@ $pdo = PDOBuilder::with()
 	->persistent()
 	->mySqlUTF8()
 	->build();
-	
+
 $pdoW = new PDOWrapper( $pdo );
 
 echo 'Table "customer" has ', $pdoW->countRows( 'customer' ), ' rows.';
@@ -77,12 +77,12 @@ Query objects
 class User {
 	private $id;
 	private $name;
-	
+
 	function __construct( $id = 0, $name = '' ) {
 		$this->id = $id;
 		$this->name = $name;
 	}
-	
+
 	function getId() { return $this->id; }
 	function getName() { return $this->name; }
 }
@@ -101,12 +101,12 @@ class UserRepositoryInRelationalDatabase {
 	 */
 	function allUsers( $limit = 0, $offset = 0 ) { // throw
 		// Paginated query
-		$sql = 'SELECT * FROM user' . 
+		$sql = 'SELECT * FROM user' .
 			$this->pdoW->makeLimitOffset( $limit, $offset );
 		// Call rowToUser to convert each row to a User
 		return $this->pdoW->queryObjects( array( $this, 'rowToUser' ), $sql );
 	}
-	
+
 	/**
 	 * Converts a row into a User.
 	 * @return User
@@ -124,4 +124,14 @@ $users = $repository->allUsers( $limit, $offset );
 foreach ( $users as $u ) {
 	echo 'Name: ', $u->getName(), '<br />';
 }
+```
+
+
+## Development
+
+After cloning the repo, run `composer install` to install the dependencies.
+
+How to run the test cases:
+```shell
+./vendor/bin/phpunit tests
 ```
