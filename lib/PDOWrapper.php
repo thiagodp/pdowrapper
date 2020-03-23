@@ -12,6 +12,9 @@ class PDOWrapper {
 
 	private $pdo;
 
+	/**
+	 * @param \PDO $pdo
+	 */
 	function __construct( \PDO $pdo ) {
 		$this->pdo = $pdo;
 	}
@@ -29,6 +32,7 @@ class PDOWrapper {
 	 * @param string $tableName		Table name.
 	 * @param string $idFieldName	Name of the id field (optional).
 	 * @return int
+	 * @throws \PDOException
 	 */
 	function generateId( $tableName, $idFieldName = 'id' ) { // throws
 		return 1 + $this->lastId( $tableName, $idFieldName );
@@ -40,6 +44,7 @@ class PDOWrapper {
 	 * @param string $tableName		Table name.
 	 * @param string $idFieldName	Name of the id field (optional).
 	 * @return int
+	 * @throws \PDOException
 	 */
 	function lastId( $tableName, $idFieldName = 'id' ) { // throws
 		$maxColumn = 'M_A_X_';
@@ -60,6 +65,7 @@ class PDOWrapper {
 	 * @param string $tableName		Table name.
 	 * @param string $idFieldName	Name of the id field (optional).
 	 * @return int
+	 * @throws \PDOException
 	 */
 	function deleteWithId( $id, $tableName, $idFieldName = 'id' ) { // throws
 		$cmd = "DELETE FROM $tableName WHERE $idFieldName = ?";
@@ -74,6 +80,7 @@ class PDOWrapper {
 	 * @param string $whereClause	SQL WHERE clause (optional).
 	 * @param array $parameters		Parameters for the where clause (optional).
 	 * @return int
+	 * @throws \PDOException
 	 */
 	function countRows(
 		$tableName,
@@ -161,6 +168,7 @@ class PDOWrapper {
 	 * @param string $className			Name of the class used to create objects (optional).
 	 * @param array $constructorArgs	Constructor arguments (optional).
 	 * @return array
+	 * @throws \PDOException
 	 *
 	 * Whether the class is defined, the objects' private attributes will
 	 * receive the columns' values.
@@ -185,6 +193,7 @@ class PDOWrapper {
 	 * @param string $className			Class name for the objects (optional).
 	 * @param array $constructorArgs	Constructor arguments (optional).
 	 * @return array
+	 * @throws \PDOException
 	 */
 	function fetchObjectsFromStatement( \PDOStatement $ps, $className = '', $constructorArgs = array() ) {
 		$fetchMode = \PDO::FETCH_OBJ;
@@ -207,6 +216,7 @@ class PDOWrapper {
 	 * @param array $parameters					Query parameters (optional).
 	 * @param array $callbackArguments			Callback arguments (optional).
 	 * @return array
+	 * @throws \PDOException
 	 *
 	 * How to use it:< br />
 	 * <code>
@@ -234,9 +244,14 @@ class PDOWrapper {
 		$objects = array();
 		$ps = $this->execute( $sql, $parameters );
 		foreach ( $ps as $row ) {
-			array_unshift($callbackArguments, $row);
-			$obj = call_user_func_array( $recordToObjectCallback, $callbackArguments ); // Transform a row into an object with arguments to callback function
+			// Add the current row as first argument
+			array_unshift( $callbackArguments, $row );
+			// Call the function to transform a row into an object
+			$obj = call_user_func_array( $recordToObjectCallback, $callbackArguments );
+			// Add the object
 			array_push( $objects, $obj );
+			// Remove the current row as first argument
+			array_shift( $callbackArguments );
 		}
 		return $objects;
 	}
@@ -249,6 +264,7 @@ class PDOWrapper {
 	 * @param string $tableName					Table name.
 	 * @param string $idFieldName				Name of the id field (optional).
 	 * @return object | null
+	 * @throws \PDOException
 	 */
 	function objectWithId( $recordToObjectCallback, $id, $tableName, $idFieldName = 'id' ) {
 		$cmd = "SELECT * FROM $tableName WHERE $idFieldName = ?";
@@ -268,6 +284,7 @@ class PDOWrapper {
 	 * @param int $limit						Maximum number of records to retrieve (optional).
 	 * @param int $offset						Number of records to ignore/jump (optional).
 	 * @return array
+	 * @throws \PDOException
 	 */
 	function allObjects( $recordToObjectCallback, $tableName, $limit = 0, $offset = 0 ) {
 		$cmd = "SELECT * FROM $tableName" . $this->makeLimitOffset( $limit, $offset );
@@ -280,6 +297,7 @@ class PDOWrapper {
 	 * @param string $command	Command to run.
 	 * @param array $parameters	Parameters for the command (optional).
 	 * @return int
+	 * @throws \PDOException
 	 */
 	function run( $command, array $parameters = array() ) { // throws
 		$ps = $this->execute( $command, $parameters );
@@ -287,11 +305,12 @@ class PDOWrapper {
 	}
 
 	/**
-	 * Runs a query with the supplied parameters and return an array of rows.
+	 * Runs a query with the supplied parameters and returns an array of rows.
 	 *
-	 * @param query			the query to run.
-	 * @param parameters	the array of parameters for the query.
-	 * @return array		an array of rows.
+	 * @param string $query		Query to run.
+	 * @param array $parameters	Array of parameters for the query.
+	 * @return array
+	 * @throws \PDOException
 	 */
 	function query( $query, array $parameters = array() ) { // throws
 		$ps = $this->execute( $query, $parameters );
@@ -299,11 +318,13 @@ class PDOWrapper {
 	}
 
 	/**
-	 * Executes a command with the supplied parameters and return a PDOStatement object.
+	 * Executes a command with the supplied parameters and returns a PDOStatement object.
 	 *
-	 * @param command			the command to execute.
-	 * @param parameters		the array of parameters for the command.
-	 * @return \PDOStatement	a {@code PDOStatement} object.
+	 * @param string $command	Command to execute.
+	 * @param array $parameters	Array of parameters for the command.
+	 * @return \PDOStatement
+	 * @throws \PDOException
+	 * @throws \RuntimeException
 	 */
 	function execute( $command, array $parameters = array() ) { // throws
 		$ps = $this->pdo->prepare( $command );
@@ -320,6 +341,7 @@ class PDOWrapper {
 	 *
 	 * @param string $name	Name of the sequence (optional).
 	 * @return string
+	 * @throws \PDOException
 	 */
 	function lastInsertId( $name = null ) {
 		return $this->pdo->lastInsertId( $name );
